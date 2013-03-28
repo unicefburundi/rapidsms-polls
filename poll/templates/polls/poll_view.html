@@ -4,7 +4,25 @@
 {% block content %}
 
 <script type="text/javascript">
-	
+
+	function ajax_loading(element)
+	{
+    	var t=$(element) ;
+    	var offset = t.offset();
+    	var dim = {
+        	left:    offset.left,
+        	top:    offset.top,
+        	width:    t.outerWidth(),
+        	height:    t.outerHeight()
+    	};
+    	$('<div class="ajax_loading"></div>').css({
+        	position:    'absolute',
+        	left:        dim.left + 'px',
+        	top:        dim.top + 'px',
+        	width:        dim.width + 'px',
+        	height:        dim.height + 'px'
+    	}).appendTo(document.body).show();
+	}
 	// Add a new box for entering a new category
 	function addNewCategoryBox() {
 		var newBox = $("#new_category_box").clone();
