@@ -56,7 +56,7 @@ class ResponseForm(forms.Form):
             forms.Form.__init__(self, data, **kwargs)
         else:
             forms.Form.__init__(self, **kwargs)
-        self.fields['categories'] = forms.ModelMultipleChoiceField(required=False, queryset=response.poll.categories.all(), initial=Category.objects.filter(pk=response.categories.values_list('category', flat=True)))
+        self.fields['categories'] = forms.ModelMultipleChoiceField(required=False, queryset=response.poll.categories.all(), initial=Category.objects.filter(pk__in=response.categories.values_list('category', flat=True)))
 
 class NumericResponseForm(ResponseForm):
     value = forms.FloatField()
