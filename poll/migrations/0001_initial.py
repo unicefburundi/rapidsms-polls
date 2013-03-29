@@ -36,7 +36,7 @@ class Migration(SchemaMigration):
         db.create_table('poll_poll_messages', (
             ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
             ('poll', models.ForeignKey(orm['poll.poll'], null=False)),
-            ('message', models.ForeignKey(orm['db.message'], null=False))
+            ('message', models.ForeignKey(orm['rapidsms_httprouter.message'], null=False))
         ))
         db.create_unique('poll_poll_messages', ['poll_id', 'message_id'])
 
@@ -72,7 +72,7 @@ class Migration(SchemaMigration):
         # Adding model 'Response'
         db.create_table('poll_response', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('message', self.gf('django.db.models.fields.related.ForeignKey')(related_name='poll_responses', null=True, to=orm['db.Message'])),
+            ('message', self.gf('django.db.models.fields.related.ForeignKey')(related_name='poll_responses', null=True, to=orm['rapidsms_httprouter.Message'])),
             ('poll', self.gf('django.db.models.fields.related.ForeignKey')(related_name='responses', to=orm['poll.Poll'])),
             ('contact', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='responses', null=True, to=orm['rapidsms.Contact'])),
             ('date', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
@@ -173,19 +173,6 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
-        'db.message': {
-            'Meta': {'object_name': 'Message'},
-            'date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'delivered': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'direction': ('django.db.models.fields.CharField', [], {'max_length': '1', 'db_index': 'True'}),
-            'external_id': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'in_response_to': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'responses'", 'null': 'True', 'to': "orm['db.Message']"}),
-            'sent': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'status': ('django.db.models.fields.CharField', [], {'default': "'Q'", 'max_length': '1', 'db_index': 'True'}),
-            'text': ('django.db.models.fields.TextField', [], {}),
-            'updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'null': 'True', 'db_index': 'True', 'blank': 'True'})
-        },
         'eav.attribute': {
             'Meta': {'ordering': "['name']", 'unique_together': "(('site', 'slug'),)", 'object_name': 'Attribute'},
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
@@ -273,7 +260,7 @@ class Migration(SchemaMigration):
             'default_response': ('django.db.models.fields.CharField', [], {'max_length': '160', 'null': 'True', 'blank': 'True'}),
             'end_date': ('django.db.models.fields.DateTimeField', [], {'null': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'messages': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['db.Message']", 'null': 'True', 'symmetrical': 'False'}),
+            'messages': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['rapidsms_httprouter.Message']", 'null': 'True', 'symmetrical': 'False'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '32'}),
             'question': ('django.db.models.fields.CharField', [], {'max_length': '160'}),
             'response_type': ('django.db.models.fields.CharField', [], {'default': "'a'", 'max_length': '1', 'null': 'True', 'blank': 'True'}),
@@ -288,7 +275,7 @@ class Migration(SchemaMigration):
             'date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'has_errors': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'message': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'poll_responses'", 'null': 'True', 'to': "orm['db.Message']"}),
+            'message': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'poll_responses'", 'null': 'True', 'to': "orm['rapidsms_httprouter.Message']"}),
             'poll': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'responses'", 'to': "orm['poll.Poll']"})
         },
         'poll.responsecategory': {
@@ -315,6 +302,18 @@ class Migration(SchemaMigration):
             'language': ('django.db.models.fields.CharField', [], {'max_length': '5', 'db_index': 'True'}),
             'value': ('django.db.models.fields.TextField', [], {'blank': 'True'})
         },
+        'rapidsms.backend': {
+            'Meta': {'object_name': 'Backend'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '20'})
+        },
+        'rapidsms.connection': {
+            'Meta': {'unique_together': "(('backend', 'identity'),)", 'object_name': 'Connection'},
+            'backend': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rapidsms.Backend']"}),
+            'contact': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['rapidsms.Contact']", 'null': 'True', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'identity': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+        },
         'rapidsms.contact': {
             'Meta': {'object_name': 'Contact'},
             'active': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
@@ -333,6 +332,19 @@ class Migration(SchemaMigration):
             'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
             'village': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'villagers'", 'null': 'True', 'to': "orm['locations.Location']"}),
             'village_name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'})
+        },
+        'rapidsms_httprouter.message': {
+            'Meta': {'object_name': 'Message'},
+            'connection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'messages'", 'to': "orm['rapidsms.Connection']"}),
+            'date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'delivered': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'direction': ('django.db.models.fields.CharField', [], {'max_length': '1'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'in_response_to': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'responses'", 'null': 'True', 'to': "orm['rapidsms_httprouter.Message']"}),
+            'sent': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'status': ('django.db.models.fields.CharField', [], {'max_length': '1'}),
+            'text': ('django.db.models.fields.TextField', [], {}),
+            'updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'null': 'True', 'blank': 'True'})
         },
         'sites.site': {
             'Meta': {'ordering': "('domain',)", 'object_name': 'Site', 'db_table': "'django_site'"},
