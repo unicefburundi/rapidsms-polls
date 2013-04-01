@@ -5,11 +5,11 @@ import datetime
 from rapidsms.apps.base import AppBase
 from .models import Poll
 from django.db.models import Q
-from rapidsms_httprouter.models import Message,MessageBatch
+from rapidsms_httprouter.models import Message, MessageBatch
 
 class App(AppBase):
     def respond_to_message(self,message,response_msg,poll):
-
+        
         if response_msg == poll.default_response:
             try:
                 batch=MessageBatch.objects.get(name=str(poll.pk))
