@@ -1,5 +1,6 @@
 import datetime
 import difflib
+from celery.task import task
 import django
 from django.db import models, transaction, connection
 from django.db.models import Sum, Avg, Count, Max, Min, StdDev
@@ -295,6 +296,17 @@ class Poll(models.Model):
 
         self.start_date = datetime.datetime.now()
         self.save()
+        poll_started.send(sender=self)
+
+    @transaction.commit_on_success
+    def start_poll_and_then_send_messages(self):
+        if self.start_date:
+            return
+
+        self.start_date = datetime.datetime.now()
+        self.save()
+
+        send_messages_to_contacts.delay(self)
         poll_started.send(sender=self)
 
     def end(self):
@@ -737,5 +749,23 @@ def gettext_db(field, language):
        lang_str = ugettext(field)
        deactivate()
        return lang_str
+
+@task
+def send_messages_to_contacts(poll):
+    contacts = poll.contacts
+    localized_messages = {}
+    for language in dict(settings.LANGUAGES).keys():
+        if language == "en":
+            """default to English for contacts with no language preference"""
+            localized_contacts = contacts.filter(language__in=["en", ''])
+        else:
+
+            localized_contacts = contacts.filter(language=language)
+        if localized_contacts.exists():
+            messages = Message.mass_text(gettext_db(field=poll.question, language=language),
+                                         Connection.objects.filter(contact__in=localized_contacts).distinct(),
+                                         status='Q', batch_status='Q')
+            #localized_messages[language] = [messages, localized_contacts]
+            poll.messages.add(*messages.values_list('pk', flat=True))
 
 
