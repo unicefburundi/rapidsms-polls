@@ -280,6 +280,8 @@ class Poll(models.Model):
         """
         if self.start_date:
             return
+        self.start_date = datetime.datetime.now()
+        self.save()
         contacts = self.contacts
         localized_messages = {}
         for language in dict(settings.LANGUAGES).keys():
@@ -294,8 +296,6 @@ class Poll(models.Model):
                 #localized_messages[language] = [messages, localized_contacts]
                 self.messages.add(*messages.values_list('pk',flat=True))
 
-        self.start_date = datetime.datetime.now()
-        self.save()
         poll_started.send(sender=self)
 
     @transaction.commit_on_success
