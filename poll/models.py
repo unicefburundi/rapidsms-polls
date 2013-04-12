@@ -57,23 +57,32 @@ class ResponseForm(forms.Form):
             forms.Form.__init__(self, data, **kwargs)
         else:
             forms.Form.__init__(self, **kwargs)
-        self.fields['categories'] = forms.ModelMultipleChoiceField(required=False, queryset=response.poll.categories.all(), initial=Category.objects.filter(pk__in=response.categories.values_list('category', flat=True)))
+        self.fields['categories'] = forms.ModelMultipleChoiceField(required=False,
+                                                                   queryset=response.poll.categories.all(),
+                                                                   initial=Category.objects.filter(
+                                                                       pk__in=response.categories.values_list(
+                                                                           'category', flat=True)))
+
 
 class NumericResponseForm(ResponseForm):
     value = forms.FloatField()
 
+
 class LocationResponseForm(ResponseForm):
     value = TreeNodeChoiceField(queryset=Location.tree.all(),
-                 level_indicator=u'.', required=True)
+                                level_indicator=u'.', required=True)
+
 
 class NameResponseForm(ResponseForm):
     value = forms.CharField()
+
 
 class ResponseCategory(models.Model):
     category = models.ForeignKey('Category')
     response = models.ForeignKey('Response', related_name='categories')
     is_override = models.BooleanField(default=False)
     user = models.ForeignKey(User, null=True)
+
 
 class Poll(models.Model):
     """
@@ -101,51 +110,55 @@ class Poll(models.Model):
     RESPONSE_TYPE_ALL = 'a'# all all responses
     RESPONSE_TYPE_ONE = 'o' # allow only one
 
-
     RESPONSE_TYPE_CHOICES = (
-                            (RESPONSE_TYPE_ALL, 'Allow all'),
-                            (RESPONSE_TYPE_ONE, 'Allow one'),
+        (RESPONSE_TYPE_ALL, 'Allow all'),
+        (RESPONSE_TYPE_ONE, 'Allow one'),
 
     )
 
-
     TYPE_CHOICES = {
         TYPE_LOCATION: dict(
-                        label='Location-based',
-                        type=TYPE_LOCATION,
-                        db_type=Attribute.TYPE_OBJECT,
-                        parser=None,
-                        view_template='polls/response_location_view.html',
-                        edit_template='polls/response_location_edit.html',
-                        report_columns=((('Text', 'text', True, 'message__text', SimpleSorter()), ('Location', 'location', True, 'eav_values__generic_value_id', SimpleSorter()), ('Categories', 'categories', True, 'categories__category__name', SimpleSorter()))),
-                        edit_form=LocationResponseForm),
+            label='Location-based',
+            type=TYPE_LOCATION,
+            db_type=Attribute.TYPE_OBJECT,
+            parser=None,
+            view_template='polls/response_location_view.html',
+            edit_template='polls/response_location_edit.html',
+            report_columns=((('Text', 'text', True, 'message__text', SimpleSorter()),
+                             ('Location', 'location', True, 'eav_values__generic_value_id', SimpleSorter()),
+                             ('Categories', 'categories', True, 'categories__category__name', SimpleSorter()))),
+            edit_form=LocationResponseForm),
         TYPE_NUMERIC: dict(
-                        label='Numeric Response',
-                        type=TYPE_NUMERIC,
-                        db_type=Attribute.TYPE_FLOAT,
-                        parser=None,
-                        view_template='polls/response_numeric_view.html',
-                        edit_template='polls/response_numeric_edit.html',
-                        report_columns=((('Text', 'text', True, 'message__text', SimpleSorter()), ('Value', 'value', True, 'eav_values__value_float', SimpleSorter()), ('Categories', 'categories', True, 'categories__category__name', SimpleSorter()))),
-                        edit_form=NumericResponseForm),
-        TYPE_TEXT:  dict(
-                        label='Free-form',
-                        type=TYPE_TEXT,
-                        db_type=Attribute.TYPE_TEXT,
-                        parser=None,
-                        view_template='polls/response_text_view.html',
-                        edit_template='polls/response_text_edit.html',
-                        report_columns=(('Text', 'text', True, 'message__text', SimpleSorter()), ('Categories', 'categories', True, 'categories__category__name', SimpleSorter())),
-                        edit_form=ResponseForm),
-        TYPE_REGISTRATION:  dict(
-                        label='Name/registration-based',
-                        type=TYPE_REGISTRATION,
-                        db_type=Attribute.TYPE_TEXT,
-                        parser=None,
-                        view_template='polls/response_registration_view.html',
-                        edit_template='polls/response_registration_edit.html',
-                        report_columns=(('Text', 'text', True, 'message__text', SimpleSorter()), ('Categories', 'categories', True, 'categories__category__name', SimpleSorter())),
-                        edit_form=NameResponseForm),
+            label='Numeric Response',
+            type=TYPE_NUMERIC,
+            db_type=Attribute.TYPE_FLOAT,
+            parser=None,
+            view_template='polls/response_numeric_view.html',
+            edit_template='polls/response_numeric_edit.html',
+            report_columns=((('Text', 'text', True, 'message__text', SimpleSorter()),
+                             ('Value', 'value', True, 'eav_values__value_float', SimpleSorter()),
+                             ('Categories', 'categories', True, 'categories__category__name', SimpleSorter()))),
+            edit_form=NumericResponseForm),
+        TYPE_TEXT: dict(
+            label='Free-form',
+            type=TYPE_TEXT,
+            db_type=Attribute.TYPE_TEXT,
+            parser=None,
+            view_template='polls/response_text_view.html',
+            edit_template='polls/response_text_edit.html',
+            report_columns=(('Text', 'text', True, 'message__text', SimpleSorter()),
+                            ('Categories', 'categories', True, 'categories__category__name', SimpleSorter())),
+            edit_form=ResponseForm),
+        TYPE_REGISTRATION: dict(
+            label='Name/registration-based',
+            type=TYPE_REGISTRATION,
+            db_type=Attribute.TYPE_TEXT,
+            parser=None,
+            view_template='polls/response_registration_view.html',
+            edit_template='polls/response_registration_edit.html',
+            report_columns=(('Text', 'text', True, 'message__text', SimpleSorter()),
+                            ('Categories', 'categories', True, 'categories__category__name', SimpleSorter())),
+            edit_form=NameResponseForm),
     }
 
     name = models.CharField(max_length=32,
@@ -161,7 +174,8 @@ class Poll(models.Model):
     sites = models.ManyToManyField(Site)
     objects = models.Manager()
     on_site = CurrentSiteManager('sites')
-    response_type = models.CharField(max_length=1, choices=RESPONSE_TYPE_CHOICES, default=RESPONSE_TYPE_ALL, null=True, blank=True)
+    response_type = models.CharField(max_length=1, choices=RESPONSE_TYPE_CHOICES, default=RESPONSE_TYPE_ALL, null=True,
+                                     blank=True)
 
     class Meta:
         permissions = (
@@ -212,19 +226,19 @@ class Poll(models.Model):
 
     @classmethod
     @transaction.commit_on_success
-
     def create_with_bulk(cls, name, type, question, default_response, contacts, user):
-        if getattr(settings,"BLACKLIST_MODEL",None):
-            app_label,model_name=settings.BLACKLIST_MODEL.rsplit(".")
+        if getattr(settings, "BLACKLIST_MODEL", None):
+            app_label, model_name = settings.BLACKLIST_MODEL.rsplit(".")
             try:
-                blacklists = models.get_model(app_label,model_name)._default_manager.values_list('connection')
-                contacts=contacts.exclude(connection__pk__in=blacklists)
-            except :
+                blacklists = models.get_model(app_label, model_name)._default_manager.values_list('connection')
+                contacts = contacts.exclude(connection__pk__in=blacklists)
+            except:
                 raise Exception("Your Blacklist Model is Improperly configured")
 
-        poll = Poll.objects.create(name=name, type=type, question=question, default_response=default_response, user=user)
+        poll = Poll.objects.create(name=name, type=type, question=question, default_response=default_response,
+                                   user=user)
         #batch for responses
-        poll.contacts.add(*contacts.values_list('pk',flat=True))
+        poll.contacts.add(*contacts.values_list('pk', flat=True))
         MessageBatch.objects.get_or_create(name=str(poll.pk))
 
         if 'django.contrib.sites' in settings.INSTALLED_APPS:
@@ -242,14 +256,14 @@ class Poll(models.Model):
         self.categories.create(name='no')
         self.categories.create(name='unknown', default=True, error_category=True)
 
-          # add one rule to yes category per language
+        # add one rule to yes category per language
         for l in langs:
             try:
-                no_words=settings.NO_WORDS.get(l,NO_WORDS)
-                yes_words=settings.YES_WORDS.get(l,YES_WORDS)
+                no_words = settings.NO_WORDS.get(l, NO_WORDS)
+                yes_words = settings.YES_WORDS.get(l, YES_WORDS)
             except AttributeError:
-                no_words=NO_WORDS
-                yes_words=YES_WORDS
+                no_words = NO_WORDS
+                yes_words = YES_WORDS
 
             no_rule_string = '|'.join(no_words)
             yes_rule_string = '|'.join(yes_words)
@@ -263,12 +277,12 @@ class Poll(models.Model):
                 regex=(STARTSWITH_PATTERN_TEMPLATE % no_rule_string),
                 rule_type=Rule.TYPE_REGEX,
                 rule_string=(STARTSWITH_PATTERN_TEMPLATE % no_rule_string))
-            
+
     def is_yesno_poll(self):
         return self.categories.count() == 3 and \
-            self.categories.filter(name='yes').count() and \
-            self.categories.filter(name='no').count() and \
-            self.categories.filter(name='unknown').count()
+               self.categories.filter(name='yes').count() and \
+               self.categories.filter(name='no').count() and \
+               self.categories.filter(name='unknown').count()
 
     @transaction.commit_on_success
     def start(self):
@@ -292,9 +306,11 @@ class Poll(models.Model):
 
                 localized_contacts = contacts.filter(language=language)
             if localized_contacts.exists():
-                messages = Message.mass_text(gettext_db(field=self.question, language=language), Connection.objects.filter(contact__in=localized_contacts).distinct(), status='Q', batch_status='Q')
+                messages = Message.mass_text(gettext_db(field=self.question, language=language),
+                                             Connection.objects.filter(contact__in=localized_contacts).distinct(),
+                                             status='Q', batch_status='Q')
                 #localized_messages[language] = [messages, localized_contacts]
-                self.messages.add(*messages.values_list('pk',flat=True))
+                self.messages.add(*messages.values_list('pk', flat=True))
 
         poll_started.send(sender=self)
 
@@ -323,7 +339,8 @@ class Poll(models.Model):
                 for rule in category.rules.all():
                     regex = re.compile(rule.regex, re.IGNORECASE)
                     if resp.eav.poll_text_value:
-                        if regex.search(resp.eav.poll_text_value.lower()) and not resp.categories.filter(category=category).count():
+                        if regex.search(resp.eav.poll_text_value.lower()) and not resp.categories.filter(
+                                category=category).count():
                             if category.error_category:
                                 resp.has_errors = True
                             rc = ResponseCategory.objects.create(response=resp, category=category)
@@ -331,7 +348,8 @@ class Poll(models.Model):
             if not resp.categories.all().count() and self.categories.filter(default=True).count():
                 if self.categories.get(default=True).error_category:
                     resp.has_errors = True
-                resp.categories.add(ResponseCategory.objects.create(response=resp, category=self.categories.get(default=True)))
+                resp.categories.add(
+                    ResponseCategory.objects.create(response=resp, category=self.categories.get(default=True)))
             resp.save()
 
     def process_response(self, message):
@@ -339,8 +357,9 @@ class Poll(models.Model):
         if hasattr(message, 'db_message'):
             db_message = message.db_message
         else:
-            db_message=message
-        resp = Response.objects.create(poll=self, message=db_message, contact=db_message.connection.contact, date=db_message.date)
+            db_message = message
+        resp = Response.objects.create(poll=self, message=db_message, contact=db_message.connection.contact,
+                                       date=db_message.date)
         outgoing_message = self.default_response
         if (self.type == Poll.TYPE_LOCATION):
             location_template = STARTSWITH_PATTERN_TEMPLATE % '[a-zA-Z]*'
@@ -368,10 +387,10 @@ class Poll(models.Model):
                 #split the text on number regex. if the msg is of form
                 #'19'or '19 years' or '19years' or 'age19'or 'ugx34.56shs' it returns a list of length 4
                 msg_parts = regex.split(message.text)
-                if len(msg_parts) == 4 :
+                if len(msg_parts) == 4:
                     resp.eav.poll_number_value = float(msg_parts[1])
                 else:
-                     resp.has_errors = True
+                    resp.has_errors = True
             except IndexError:
                 resp.has_errors = True
 
@@ -396,7 +415,7 @@ class Poll(models.Model):
                 if typedef['db_type'] == Attribute.TYPE_TEXT:
                     resp.eav.poll_text_value = cleaned_value
                 elif typedef['db_type'] == Attribute.TYPE_FLOAT or \
-                     typedef['db_type'] == Attribute.TYPE_INT:
+                                typedef['db_type'] == Attribute.TYPE_INT:
                     resp.eav.poll_number_value = cleaned_value
                 elif typedef['db_type'] == Attribute.TYPE_OBJECT:
                     resp.eav.poll_location_value = cleaned_value
@@ -408,7 +427,8 @@ class Poll(models.Model):
                     outgoing_message = None
 
         if not resp.categories.all().count() and self.categories.filter(default=True).count():
-            resp.categories.add(ResponseCategory.objects.create(response=resp, category=self.categories.get(default=True)))
+            resp.categories.add(
+                ResponseCategory.objects.create(response=resp, category=self.categories.get(default=True)))
             if self.categories.get(default=True).error_category:
                 resp.has_errors = True
                 outgoing_message = self.categories.get(default=True).response
@@ -422,40 +442,49 @@ class Poll(models.Model):
         if not outgoing_message:
             return (resp, None,)
         else:
-            if db_message.connection.contact and  db_message.connection.contact.language:
+            if db_message.connection.contact and db_message.connection.contact.language:
                 outgoing_message = gettext_db(language=db_message.connection.contact.language, field=outgoing_message)
 
             return (resp, outgoing_message,)
 
     def get_numeric_detailed_data(self):
-        return Value.objects.filter(attribute__slug='poll_number_value', entity_ct=ContentType.objects.get_for_model(Response), entity_id__in=self.responses.all()).values_list('value_float').annotate(Count('value_float')).order_by('-value_float')
+        return Value.objects.filter(attribute__slug='poll_number_value',
+                                    entity_ct=ContentType.objects.get_for_model(Response),
+                                    entity_id__in=self.responses.all()).values_list('value_float').annotate(
+            Count('value_float')).order_by('-value_float')
 
     def get_numeric_report_data(self, location=None, for_map=None):
         if location:
-            q = Value.objects.filter(attribute__slug='poll_number_value', entity_ct=ContentType.objects.get_for_model(Response), entity_id__in=self.responses.all())
+            q = Value.objects.filter(attribute__slug='poll_number_value',
+                                     entity_ct=ContentType.objects.get_for_model(Response),
+                                     entity_id__in=self.responses.all())
             q = q.extra(tables=['poll_response', 'rapidsms_contact', 'locations_location', 'locations_location'],
-                    where=['poll_response.id = eav_value.entity_id',
-                           'rapidsms_contact.id = poll_response.contact_id',
-                           'locations_location.id = rapidsms_contact.reporting_location_id',
-                           'T7.id in %s' % (str(tuple(location.get_children().values_list('pk', flat=True)))),
-                           'T7.lft <= locations_location.lft', \
-                           'T7.rght >= locations_location.rght', \
-                           ],
-                    select={
-                        'location_name':'T7.name',
-                        'location_id':'T7.id',
-                        'lft':'T7.lft',
-                        'rght':'T7.rght',
-                    }).values('location_name', 'location_id')
+                        where=['poll_response.id = eav_value.entity_id',
+                               'rapidsms_contact.id = poll_response.contact_id',
+                               'locations_location.id = rapidsms_contact.reporting_location_id',
+                               'T7.id in %s' % (str(tuple(location.get_children().values_list('pk', flat=True)))),
+                               'T7.lft <= locations_location.lft', \
+                               'T7.rght >= locations_location.rght', \
+                            ],
+                        select={
+                            'location_name': 'T7.name',
+                            'location_id': 'T7.id',
+                            'lft': 'T7.lft',
+                            'rght': 'T7.rght',
+                        }).values('location_name', 'location_id')
 
         else:
-            q = Value.objects.filter(attribute__slug='poll_number_value', entity_ct=ContentType.objects.get_for_model(Response), entity_id__in=self.responses.all()).values('entity_ct')
-        q = q.annotate(Sum('value_float'), Count('value_float'), Avg('value_float'), StdDev('value_float'), Max('value_float'), Min('value_float'))
+            q = Value.objects.filter(attribute__slug='poll_number_value',
+                                     entity_ct=ContentType.objects.get_for_model(Response),
+                                     entity_id__in=self.responses.all()).values('entity_ct')
+        q = q.annotate(Sum('value_float'), Count('value_float'), Avg('value_float'), StdDev('value_float'),
+                       Max('value_float'), Min('value_float'))
         return q
 
     def responses_by_category(self, location=None, for_map=True):
         categorized = ResponseCategory.objects.filter(response__poll=self)
-        uncategorized = self.responses.exclude(pk__in=ResponseCategory.objects.filter(response__poll=self).values_list('response', flat=True))
+        uncategorized = self.responses.exclude(
+            pk__in=ResponseCategory.objects.filter(response__poll=self).values_list('response', flat=True))
         uvalues = ['poll__pk']
 
         if location:
@@ -469,44 +498,44 @@ class Poll(models.Model):
                 location_where = 'T9.id in %s' % (str(tuple(location.get_children().values_list('pk', flat=True))))
                 ulocation_where = 'T7.id in %s' % (str(tuple(location.get_children().values_list('pk', flat=True))))
 
-            where_list = [\
-                          'T9.lft <= locations_location.lft', \
-                          'T9.rght >= locations_location.rght', \
-                          location_where, \
-                          'T9.point_id = locations_point.id', ]
+            where_list = [ \
+                'T9.lft <= locations_location.lft', \
+                'T9.rght >= locations_location.rght', \
+                location_where, \
+                'T9.point_id = locations_point.id', ]
             select = {
-                        'location_name':'T9.name',
-                        'location_id':'T9.id',
-                        'lat':'locations_point.latitude',
-                        'lon':'locations_point.longitude',
-                        'rght':'T9.rght',
-                        'lft':'T9.lft',
-                    }
+                'location_name': 'T9.name',
+                'location_id': 'T9.id',
+                'lat': 'locations_point.latitude',
+                'lon': 'locations_point.longitude',
+                'rght': 'T9.rght',
+                'lft': 'T9.lft',
+            }
             tables = ['locations_location', 'locations_point']
             if not for_map:
                 where_list = where_list[:3]
                 select.pop('lat')
                 select.pop('lon')
                 tables = tables[:1]
-            categorized = categorized\
-                    .values('response__message__connection__contact__reporting_location__name')\
-                    .extra(tables=tables, \
-                           where=where_list)\
-                    .extra(select=select)
+            categorized = categorized \
+                .values('response__message__connection__contact__reporting_location__name') \
+                .extra(tables=tables, \
+                       where=where_list) \
+                .extra(select=select)
 
-            uwhere_list = [\
-                          'T7.lft <= locations_location.lft', \
-                          'T7.rght >= locations_location.rght', \
-                          ulocation_where, \
-                          'T7.point_id = locations_point.id', ]
+            uwhere_list = [ \
+                'T7.lft <= locations_location.lft', \
+                'T7.rght >= locations_location.rght', \
+                ulocation_where, \
+                'T7.point_id = locations_point.id', ]
             uselect = {
-                        'location_name':'T7.name',
-                        'location_id':'T7.id',
-                        'lat':'locations_point.latitude',
-                        'lon':'locations_point.longitude',
-                        'rght':'T7.rght',
-                        'lft':'T7.lft',
-                    }
+                'location_name': 'T7.name',
+                'location_id': 'T7.id',
+                'lat': 'locations_point.latitude',
+                'lon': 'locations_point.longitude',
+                'rght': 'T7.rght',
+                'lft': 'T7.lft',
+            }
             uvalues = ['location_name', 'location_id', 'lat', 'lon']
             utables = ['locations_location', 'locations_point']
             if not for_map:
@@ -516,11 +545,11 @@ class Poll(models.Model):
                 uvalues = uvalues[:2]
                 utables = utables[:1]
 
-            uncategorized = uncategorized\
-                    .values('message__connection__contact__reporting_location__name')\
-                    .extra(tables=utables, \
-                           where=uwhere_list)\
-                    .extra(select=uselect)
+            uncategorized = uncategorized \
+                .values('message__connection__contact__reporting_location__name') \
+                .extra(tables=utables, \
+                       where=uwhere_list) \
+                .extra(select=uselect)
 
             values_list = ['location_name', 'location_id', 'category__name', 'category__color', 'lat', 'lon', ]
             if not for_map:
@@ -528,9 +557,9 @@ class Poll(models.Model):
         else:
             values_list = ['category__name', 'category__color']
 
-        categorized = categorized.values(*values_list)\
-                      .annotate(value=Count('pk'))\
-                      .order_by('category__name')
+        categorized = categorized.values(*values_list) \
+            .annotate(value=Count('pk')) \
+            .order_by('category__name')
 
         uncategorized = uncategorized.values(*uvalues).annotate(value=Count('pk'))
 
@@ -548,20 +577,21 @@ class Poll(models.Model):
         if len(uncategorized):
             uncategorized = list(uncategorized)
             for d in uncategorized:
-                d.update({'category__name':'uncategorized', 'category__color':''})
+                d.update({'category__name': 'uncategorized', 'category__color': ''})
             categorized = list(categorized) + uncategorized
 
         return categorized
 
     def process_uncategorized(self):
-        responses=self.responses.filter(categories__category=None)
+        responses = self.responses.filter(categories__category=None)
         for resp in responses:
             resp.has_errors = False
             for category in self.categories.all():
                 for rule in category.rules.all():
                     regex = re.compile(rule.regex, re.IGNORECASE)
                     if resp.eav.poll_text_value:
-                        if regex.search(resp.eav.poll_text_value.lower()) and not resp.categories.filter(category=category).count():
+                        if regex.search(resp.eav.poll_text_value.lower()) and not resp.categories.filter(
+                                category=category).count():
                             if category.error_category:
                                 resp.has_errors = True
                             rc = ResponseCategory.objects.create(response=resp, category=category)
@@ -569,15 +599,17 @@ class Poll(models.Model):
             if not resp.categories.all().count() and self.categories.filter(default=True).count():
                 if self.categories.get(default=True).error_category:
                     resp.has_errors = True
-                resp.categories.add(ResponseCategory.objects.create(response=resp, category=self.categories.get(default=True)))
+                resp.categories.add(
+                    ResponseCategory.objects.create(response=resp, category=self.categories.get(default=True)))
             resp.save()
 
-    def responses_by_age(self,lower_bound_in_years,upper_bound_in_years):
+    def responses_by_age(self, lower_bound_in_years, upper_bound_in_years):
         lower_bound_date = datetime.datetime.now() - relativedelta(years=lower_bound_in_years)
         upper_bound_date = datetime.datetime.now() - relativedelta(years=upper_bound_in_years)
         category_dicts = ResponseCategory.objects.filter(response__poll=self,
-            response__contact__birthdate__gte=upper_bound_date,
-            response__contact__birthdate__lte=lower_bound_date).values('category__name').annotate(
+                                                         response__contact__birthdate__gte=upper_bound_date,
+                                                         response__contact__birthdate__lte=lower_bound_date).values(
+            'category__name').annotate(
             value=Count('pk'))
         return [self._get_formatted_values_for_bar_chart(category_dict) for category_dict in category_dicts]
 
@@ -585,7 +617,8 @@ class Poll(models.Model):
         assert self.is_yesno_poll()
         values_list = ['category__name']
         category_dicts = ResponseCategory.objects.filter(response__poll=self,
-            response__contact__gender__iexact=gender).values(*values_list).annotate(value=Count('pk'))
+                                                         response__contact__gender__iexact=gender).values(
+            *values_list).annotate(value=Count('pk'))
         return [self._get_formatted_values_for_bar_chart(category_dict) for category_dict in category_dicts]
 
     def __unicode__(self):
@@ -628,6 +661,7 @@ class Category(models.Model):
     def __unicode__(self):
         return u'%s' % self.name
 
+
 class Response(models.Model):
     """
     Responses tie incoming messages from poll participants to a particular
@@ -649,7 +683,9 @@ class Response(models.Model):
             if not rc.category in categories:
                 rc.delete()
 
+
 register(Response)
+
 
 class Rule(models.Model):
     """
@@ -658,62 +694,62 @@ class Rule(models.Model):
     one or more rules to belong to a category.
     """
 
-    contains_all_of=1
-    contains_one_of=2
-
-
+    contains_all_of = 1
+    contains_one_of = 2
 
     TYPE_STARTSWITH = 'sw'
     TYPE_CONTAINS = 'c'
     TYPE_REGEX = 'r'
     RULE_CHOICES = (
-         (TYPE_STARTSWITH, 'Starts With'),
-         (TYPE_CONTAINS, 'Contains'),
-         (TYPE_REGEX, 'Regex (advanced)'))
+        (TYPE_STARTSWITH, 'Starts With'),
+        (TYPE_CONTAINS, 'Contains'),
+        (TYPE_REGEX, 'Regex (advanced)'))
 
     RULE_DICTIONARY = {
-         TYPE_STARTSWITH: 'Starts With',
-         TYPE_CONTAINS: 'Contains',
-         TYPE_REGEX: 'Regex (advanced)',
+        TYPE_STARTSWITH: 'Starts With',
+        TYPE_CONTAINS: 'Contains',
+        TYPE_REGEX: 'Regex (advanced)',
     }
 
     regex = models.CharField(max_length=256)
     category = models.ForeignKey(Category, related_name='rules')
     rule_type = models.CharField(max_length=2, choices=RULE_CHOICES)
     rule_string = models.CharField(max_length=256, null=True)
-    rule=models.IntegerField(max_length=10,choices=((contains_all_of,"contains_all_of"),(contains_one_of,"contains_one_of"),),null=True)
+    rule = models.IntegerField(max_length=10,
+                               choices=((contains_all_of, "contains_all_of"), (contains_one_of, "contains_one_of"),),
+                               null=True)
 
     def get_regex(self):
         """
            create a regular expression from the input
         """
-        words=self.rule_string.split(',')
+        words = self.rule_string.split(',')
 
         if self.rule == 1:
-            all_template=r"(?=.*\b%s\b)"
-            w_regex=r""
+            all_template = r"(?=.*\b%s\b)"
+            w_regex = r""
             for word in words:
                 if len(word):
-                    w_regex=w_regex+all_template%re.escape(word.strip())
+                    w_regex = w_regex + all_template % re.escape(word.strip())
             return w_regex
 
         elif self.rule == 2:
-            one_template=r"(\b%s\b)"
-            w_regex=r""
+            one_template = r"(\b%s\b)"
+            w_regex = r""
             for word in words:
                 if len(w_regex):
                     if len(word):
-                        w_regex=w_regex+r"|"+one_template%re.escape(word.strip())
+                        w_regex = w_regex + r"|" + one_template % re.escape(word.strip())
                 else:
                     if len(word):
-                        w_regex=w_regex+one_template%re.escape(word.strip())
+                        w_regex = w_regex + one_template % re.escape(word.strip())
 
             return w_regex
 
-    def save(self,*args,**kwargs):
+    def save(self, *args, **kwargs):
         if self.rule:
             self.regex = self.get_regex()
-        super(Rule,self).save()
+        super(Rule, self).save()
 
     @property
     def rule_type_friendly(self):
@@ -733,6 +769,7 @@ class Translation(models.Model):
     language = models.CharField(max_length=5, db_index=True,
                                 choices=settings.LANGUAGES)
     value = models.TextField(blank=True)
+
     def __unicode__(self):
         return u'%s: %s' % (self.language, self.value)
 
@@ -743,12 +780,13 @@ class Translation(models.Model):
 def gettext_db(field, language):
     #if name exists in po file get it else look
     if Translation.objects.filter(field=field, language=language).exists():
-       return Translation.objects.filter(field=field, language=language)[0].value
+        return Translation.objects.filter(field=field, language=language)[0].value
     else:
-       activate(language)
-       lang_str = ugettext(field)
-       deactivate()
-       return lang_str
+        activate(language)
+        lang_str = ugettext(field)
+        deactivate()
+        return lang_str
+
 
 @task
 def send_messages_to_contacts(poll):
