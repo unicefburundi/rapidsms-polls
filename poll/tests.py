@@ -257,9 +257,19 @@ class ProcessingTests(TestScript):
 
         self.fake_incoming(self.connection1, 'my precious :)')
         self.assertEqual(Message.objects.filter(connection=self.connection1,direction="O").count(),1)
-        
 
-            
+
+    def test_nothing_happens_if_you_start_a_started_poll(self):
+
+        p = Poll.create_with_bulk(
+            'test poll1',
+            Poll.TYPE_TEXT,
+            'are you there?',
+            'glad to know where you are!',
+            Contact.objects.all(),
+            self.user)
+        p.start()
+        p.start() #no exceptions should be thrown...
 
 
 

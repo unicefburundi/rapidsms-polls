@@ -30,6 +30,10 @@ import re
 from django.utils.translation import (ugettext, activate, deactivate)
 from dateutil.relativedelta import relativedelta
 
+import logging
+
+log = logging.getLogger('django')
+
 
 poll_started = django.dispatch.Signal(providing_args=[])
 
@@ -284,6 +288,13 @@ class Poll(models.Model):
                self.categories.filter(name='no').count() and \
                self.categories.filter(name='unknown').count()
 
+    def log_poll_message_warn(self, message):
+        log.warn("[poll-" + str(self.pk) + "] " + message)
+
+    def log_poll_message_info(self, message):
+        log.info("[poll-" + str(self.pk) + "] " + message)
+
+
     @transaction.commit_on_success
     def start(self):
         """
@@ -292,12 +303,20 @@ class Poll(models.Model):
         All incoming messages from these users will be considered as
         potentially a response to this poll.
         """
+
         if self.start_date:
+            self.log_poll_message_warn(" poll has a start date, not starting poll!")
             return
+
         self.start_date = datetime.datetime.now()
         self.save()
+
+        self.log_poll_message_info(" start - startDate=" + str(self.start_date))
+
         contacts = self.contacts
         localized_messages = {}
+
+        self.log_poll_message_info(" checking languages... " + str(dict(settings.LANGUAGES).keys()))
         for language in dict(settings.LANGUAGES).keys():
             if language == "en":
                 """default to English for contacts with no language preference"""
@@ -306,24 +325,18 @@ class Poll(models.Model):
 
                 localized_contacts = contacts.filter(language=language)
             if localized_contacts.exists():
+                self.log_poll_message_info(" creating messages using Message.mass_text...")
                 messages = Message.mass_text(gettext_db(field=self.question, language=language),
                                              Connection.objects.filter(contact__in=localized_contacts).distinct(),
                                              status='Q', batch_status='Q')
                 #localized_messages[language] = [messages, localized_contacts]
+                self.log_poll_message_info(" messages created ok. Adding messages to self...")
                 self.messages.add(*messages.values_list('pk', flat=True))
+                self.log_poll_message_info(" messages added ok.")
 
+        self.log_poll_message_info(" sending poll_started signal...")
         poll_started.send(sender=self)
-
-    @transaction.commit_on_success
-    def start_poll_and_then_send_messages(self):
-        if self.start_date:
-            return
-
-        self.start_date = datetime.datetime.now()
-        self.save()
-
-        send_messages_to_contacts.delay(self)
-        poll_started.send(sender=self)
+        self.log_poll_message_info(" poll_started signal sent ok.")
 
     def end(self):
         self.end_date = datetime.datetime.now()
