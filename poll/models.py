@@ -231,6 +231,10 @@ class Poll(models.Model):
     @classmethod
     @transaction.commit_on_success
     def create_with_bulk(cls, name, type, question, default_response, contacts, user):
+
+        log.info("[Poll.create_with_bulk] Creating a poll with bulk contacts...")
+
+        log.info("[Poll.create_with_bulk] ignoring blacklisted contacs...")
         if getattr(settings, "BLACKLIST_MODEL", None):
             app_label, model_name = settings.BLACKLIST_MODEL.rsplit(".")
             try:
@@ -238,16 +242,22 @@ class Poll(models.Model):
                 contacts = contacts.exclude(connection__pk__in=blacklists)
             except:
                 raise Exception("Your Blacklist Model is Improperly configured")
+        log.info("[Poll.create_with_bulk] ignored blacklist ok.")
 
         poll = Poll.objects.create(name=name, type=type, question=question, default_response=default_response,
                                    user=user)
         #batch for responses
+        log.info("[Poll.create_with_bulk] Adding contacts...")
         poll.contacts.add(*contacts.values_list('pk', flat=True))
+
+        log.info("[Poll.create_with_bulk] Create message batch...")
         MessageBatch.objects.get_or_create(name=str(poll.pk))
 
+        log.info("[Poll.create_with_bulk] Adding the site...")
         if 'django.contrib.sites' in settings.INSTALLED_APPS:
             poll.sites.add(Site.objects.get_current())
 
+        log.info("[Poll.create_with_bulk] created ok.")
         return poll
 
     def add_yesno_categories(self):
@@ -281,6 +291,8 @@ class Poll(models.Model):
                 regex=(STARTSWITH_PATTERN_TEMPLATE % no_rule_string),
                 rule_type=Rule.TYPE_REGEX,
                 rule_string=(STARTSWITH_PATTERN_TEMPLATE % no_rule_string))
+
+        self.log_poll_message_info(" added categories - " + str(self.categories))
 
     def is_yesno_poll(self):
         return self.categories.count() == 3 and \
