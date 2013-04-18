@@ -32,7 +32,7 @@ from dateutil.relativedelta import relativedelta
 
 import logging
 
-log = logging.getLogger('django')
+log = logging.getLogger(__name__)
 
 
 poll_started = django.dispatch.Signal(providing_args=[])
