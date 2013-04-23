@@ -231,7 +231,7 @@ class Poll(models.Model):
     @classmethod
     @transaction.commit_on_success
     def create_with_bulk(cls, name, type, question, default_response, contacts, user):
-
+        log.info("[Poll.create_with_bulk] TRANSACTION START")
         log.info("[Poll.create_with_bulk] Creating a poll with bulk contacts...")
 
         log.info("[Poll.create_with_bulk] ignoring blacklisted contacs...")
@@ -258,6 +258,7 @@ class Poll(models.Model):
             poll.sites.add(Site.objects.get_current())
 
         log.info("[Poll.create_with_bulk] created ok.")
+        log.info("[Poll.create_with_bulk] TRANSACTION COMMIT")
         return poll
 
     def add_yesno_categories(self):
@@ -315,7 +316,7 @@ class Poll(models.Model):
         All incoming messages from these users will be considered as
         potentially a response to this poll.
         """
-
+        self.log_poll_message_info(" TRANSACTION START")
         if self.start_date:
             self.log_poll_message_warn(" poll has a start date, not starting poll!")
             return
@@ -349,6 +350,8 @@ class Poll(models.Model):
         self.log_poll_message_info(" sending poll_started signal...")
         poll_started.send(sender=self)
         self.log_poll_message_info(" poll_started signal sent ok.")
+
+        self.log_poll_message_info(" TRANSACTION COMMIT")
 
     def end(self):
         self.end_date = datetime.datetime.now()
