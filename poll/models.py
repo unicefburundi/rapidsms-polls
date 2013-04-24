@@ -321,8 +321,10 @@ class Poll(models.Model):
             self.log_poll_message_warn(" poll has a start date, not starting poll!")
             return
 
+        self.log_poll_message_info(" Saving start date...")
         self.start_date = datetime.datetime.now()
         self.save()
+        self.log_poll_message_info(" Start date saved ok.")
 
         self.log_poll_message_info(" start - startDate=" + str(self.start_date))
 
