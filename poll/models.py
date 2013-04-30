@@ -293,7 +293,7 @@ class Poll(models.Model):
                 rule_type=Rule.TYPE_REGEX,
                 rule_string=(STARTSWITH_PATTERN_TEMPLATE % no_rule_string))
 
-        self.log_poll_message_info(" added categories - " + str(self.categories))
+        self.log_poll_message_info(" Poll creation categories - [{}]".format([str(category) for  category in self.categories.all()]))
 
     def is_yesno_poll(self):
         return self.categories.count() == 3 and \
@@ -307,6 +307,8 @@ class Poll(models.Model):
     def log_poll_message_info(self, message):
         log.info("[poll-" + str(self.pk) + "] " + message)
 
+    def log_poll_message_debug(self, message):
+        log.debug("[poll-" + str(self.pk) + "] " + message)
 
     @transaction.commit_on_success
     def start(self):
@@ -383,6 +385,7 @@ class Poll(models.Model):
             resp.save()
 
     def process_response(self, message):
+        self.log_poll_message_debug("processing response...")
         db_message = None
         if hasattr(message, 'db_message'):
             db_message = message.db_message
@@ -390,6 +393,8 @@ class Poll(models.Model):
             db_message = message
         resp = Response.objects.create(poll=self, message=db_message, contact=db_message.connection.contact,
                                        date=db_message.date)
+
+        self.log_poll_message_debug("Response PK ={}".format(str(resp.pk)))
         outgoing_message = self.default_response
         if (self.type == Poll.TYPE_LOCATION):
             location_template = STARTSWITH_PATTERN_TEMPLATE % '[a-zA-Z]*'
@@ -456,9 +461,9 @@ class Poll(models.Model):
                 else:
                     outgoing_message = None
 
+        self.log_poll_message_debug("checking for categorisation...")
         if not resp.categories.all().count() and self.categories.filter(default=True).count():
-            resp.categories.add(
-                ResponseCategory.objects.create(response=resp, category=self.categories.get(default=True)))
+            resp.categories.add(ResponseCategory.objects.create(response=resp, category=self.categories.get(default=True)))
             if self.categories.get(default=True).error_category:
                 resp.has_errors = True
                 outgoing_message = self.categories.get(default=True).response
@@ -468,6 +473,8 @@ class Poll(models.Model):
                 if respcategory.category.response:
                     outgoing_message = respcategory.category.response
                     break
+
+        self.log_poll_message_debug("Added categories [{}]".format([r.category for r in resp.categories.all()]))
         resp.save()
         if not outgoing_message:
             return (resp, None,)
