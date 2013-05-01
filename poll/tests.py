@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from rapidsms.models import Contact, Connection, Backend
 from poll.models import Poll, Response, Category, Rule,Translation
 from rapidsms_httprouter.router import get_router
-from rapidsms_httprouter.models import Message
+from rapidsms_httprouter.models import Message, MessageBatch
 from django.utils import translation
 
 
@@ -278,6 +278,22 @@ class ProcessingTests(TestScript):
             self.user)
         p.start()
         p.start() #no exceptions should be thrown...
+
+    def test_batch_status_is_Q_when_start_poll(self):
+        p = Poll.create_with_bulk(
+            'test poll1',
+            Poll.TYPE_TEXT,
+            'are you there?',
+            'glad to know where you are!',
+            Contact.objects.all(),
+            self.user)
+        p.start()
+
+        batchName = p.get_outgoing_message_batch_name()
+        batches = MessageBatch.objects.filter(name=batchName).all()
+
+        for batch in batches:
+            self.assertEqual(batch.status, "Q")
 
 
 
