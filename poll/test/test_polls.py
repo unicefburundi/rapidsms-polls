@@ -1,8 +1,11 @@
 from datetime import datetime
 from unittest import TestCase
+from nose.tools import nottest
+
 from poll.models import Poll, Response
 from django.contrib.auth.models import User
 from rapidsms.models import Contact, Backend, Connection
+from rapidsms_httprouter.models import MessageBatch
 from rapidsms_httprouter.router import get_router
 from dateutil.relativedelta import relativedelta
 
@@ -32,9 +35,13 @@ class TestPolls(TestCase):
         self.poll.save()
         self.poll.start()
 
-    def send_message(self, connection, message):
-        router = get_router()
-        router.handle_incoming(connection.backend.name, connection.identity, message)
+    def tearDown(self):
+        Backend.objects.all().delete()
+        Connection.objects.all().delete()
+        Response.objects.all().delete()
+        Poll.objects.all().delete()
+        Contact.objects.all().delete()
+        User.objects.all().delete()
 
     def test_responses_by_gender_only_for_male(self):
         self.send_message(self.connection_for_male, 'yes')
@@ -73,11 +80,13 @@ class TestPolls(TestCase):
         self.assertIn(no_responses,results)
         self.assertIn(unknown_responses,results)
 
-    def tearDown(self):
-        Backend.objects.all().delete()
-        Connection.objects.all().delete()
-        Response.objects.all().delete()
-        Poll.objects.all().delete()
-        Contact.objects.all().delete()
-        User.objects.all().delete()
+    @nottest #WORKING ON THIS
+    def test_message_batch_has_poll_id_in_name(self):
+        batchName = self.poll.get_outgoing_message_batch_name()
+        batchesForPoll = MessageBatch.objects.filter(name=batchName).all()
 
+        self.assertEqual(len(batchesForPoll), 1, "Should be able to find a message batch with name [%s]." % batchName)
+
+    def send_message(self, connection, message):
+        router = get_router()
+        router.handle_incoming(connection.backend.name, connection.identity, message)

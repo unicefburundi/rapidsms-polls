@@ -47,7 +47,7 @@ class App(AppBase):
                     log.debug("[poll-app] Processing response again (theres already one from this contact)")
                     response_obj, response_msg = poll.process_response(message)
                     if poll.response_type == Poll.RESPONSE_TYPE_ONE :
-                        log.debug("[poll-app] Poll only allows one response per person, overwriting old response...")
+                        log.debug("[poll-app] Poll only allows one response per person, overwriting old response and replying...")
                         if not response_obj.has_errors or old_response.has_errors:
                             old_response.delete()
                             if hasattr(message, 'db_message'):
@@ -58,8 +58,11 @@ class App(AppBase):
                                 self.respond_to_message(message,response_msg,poll)
                         else:
                             response_obj.delete()
+                        log.debug("[poll-app] Message handled.")
                         return False
                     else:
+                        log.debug("[poll-app] Recorded response but NOT sending the response message [%s]." % str(response_msg))
+                        log.debug("[poll-app] Message handled.")
                         return False
 
                 else:

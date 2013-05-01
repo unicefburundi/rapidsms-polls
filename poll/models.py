@@ -487,6 +487,9 @@ class Poll(models.Model):
 
             return (resp, outgoing_message,)
 
+    def get_outgoing_message_batch_name(self):
+        return "POLL-%d-O" % self.pk
+
     def get_numeric_detailed_data(self):
         return Value.objects.filter(attribute__slug='poll_number_value',
                                     entity_ct=ContentType.objects.get_for_model(Response),
