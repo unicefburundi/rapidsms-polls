@@ -80,7 +80,6 @@ class TestPolls(TestCase):
         self.assertIn(no_responses,results)
         self.assertIn(unknown_responses,results)
 
-    @nottest #WORKING ON THIS
     def test_message_batch_has_poll_id_in_name(self):
         batchName = self.poll.get_outgoing_message_batch_name()
         batchesForPoll = MessageBatch.objects.filter(name=batchName).all()

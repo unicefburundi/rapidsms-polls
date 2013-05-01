@@ -348,7 +348,8 @@ class Poll(models.Model):
                 self.log_poll_message_info(" creating messages using Message.mass_text for [%d] contacts in [%s]..." % (len(localized_contacts), language))
                 messages = Message.mass_text(gettext_db(field=self.question, language=language),
                                              Connection.objects.filter(contact__in=localized_contacts).distinct(),
-                                             status='Q', batch_status='Q')
+                                             status='Q', batch_status='Q',
+                                             batch_name=self.get_outgoing_message_batch_name())
                 #localized_messages[language] = [messages, localized_contacts]
                 self.log_poll_message_info(" messages created ok. Adding messages to self...")
                 self.messages.add(*messages.values_list('pk', flat=True))
