@@ -345,7 +345,7 @@ class Poll(models.Model):
 
                 localized_contacts = contacts.filter(language=language)
             if localized_contacts.exists():
-                self.log_poll_message_info(" creating messages using Message.mass_text...")
+                self.log_poll_message_info(" creating messages using Message.mass_text for [%d] contacts in [%s]..." % (len(localized_contacts), language))
                 messages = Message.mass_text(gettext_db(field=self.question, language=language),
                                              Connection.objects.filter(contact__in=localized_contacts).distinct(),
                                              status='Q', batch_status='Q')
