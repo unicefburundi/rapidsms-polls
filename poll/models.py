@@ -234,12 +234,15 @@ class Poll(models.Model):
         log.info("[Poll.create_with_bulk] TRANSACTION START")
         log.info("[Poll.create_with_bulk] Creating a poll with bulk contacts...")
 
-        log.info("[Poll.create_with_bulk] ignoring blacklisted contacs...")
+        log.info("[Poll.create_with_bulk] ignoring blacklisted contacts...")
         if getattr(settings, "BLACKLIST_MODEL", None):
             app_label, model_name = settings.BLACKLIST_MODEL.rsplit(".")
             try:
                 blacklists = models.get_model(app_label, model_name)._default_manager.values_list('connection')
+                contactsBefore = len(contacts)
                 contacts = contacts.exclude(connection__pk__in=blacklists)
+                contactsAfter = len(contacts)
+                log.info("[Poll.create_with_bulk] excluded [%d] blacklisted contacts. This poll will have [%d] active contacts." % ((contactsBefore - contactsAfter), contactsAfter))
             except:
                 raise Exception("Your Blacklist Model is Improperly configured")
         log.info("[Poll.create_with_bulk] ignored blacklist ok.")
