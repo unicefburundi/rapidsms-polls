@@ -488,6 +488,12 @@ class Poll(models.Model):
 
             return (resp, outgoing_message,)
 
+    def get_start_poll_batch_status(self):
+        if getattr(settings, "FEATURE_PREPARE_SEND_POLL", False):
+            return "P"
+        else:
+            return "Q"
+
     def get_outgoing_message_batch_name(self):
         return "P%d-O" % self.pk
 

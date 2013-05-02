@@ -1,5 +1,6 @@
 from datetime import datetime
 from unittest import TestCase
+from django.conf import settings
 from nose.tools import nottest
 
 from poll.models import Poll, Response
@@ -8,6 +9,24 @@ from rapidsms.models import Contact, Backend, Connection
 from rapidsms_httprouter.models import MessageBatch
 from rapidsms_httprouter.router import get_router
 from dateutil.relativedelta import relativedelta
+
+class TestBatchSending(TestCase):
+
+    def test_should_choose_batch_status_based_on_feature_flag(self):
+        p = Poll()
+
+        self.assertEqual(p.get_start_poll_batch_status(), "Q")
+
+        settings.FEATURE_PREPARE_SEND_POLL = True
+
+        self.assertEqual(p.get_start_poll_batch_status(), "P")
+
+        settings.FEATURE_PREPARE_SEND_POLL = False
+
+        self.assertEqual(p.get_start_poll_batch_status(), "Q")
+
+    
+
 
 class TestPolls(TestCase):
 
