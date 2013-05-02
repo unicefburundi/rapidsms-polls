@@ -10,6 +10,7 @@ from rapidsms_httprouter.models import MessageBatch
 from rapidsms_httprouter.router import get_router
 from dateutil.relativedelta import relativedelta
 
+
 class TestBatchSending(TestCase):
 
     def test_should_choose_batch_status_based_on_feature_flag(self):
@@ -25,7 +26,48 @@ class TestBatchSending(TestCase):
 
         self.assertEqual(p.get_start_poll_batch_status(), "Q")
 
-    
+    def test_batch_status_should_be_Q_by_default(self):
+        self.clear_settings()
+
+        poll = self.create_and_start_poll("Q")
+
+        batch = MessageBatch.objects.filter(name=poll.get_outgoing_message_batch_name()).all()[0]
+
+        self.assertEqual(batch.status, "Q")
+
+    def test_batch_status_should_be_P_if_feature_flag_is_on(self):
+        settings.FEATURE_PREPARE_SEND_POLL = True
+
+        poll = self.create_and_start_poll("P")
+
+        batch = MessageBatch.objects.filter(name=poll.get_outgoing_message_batch_name()).all()[0]
+
+        self.assertEqual(batch.status, "P")
+
+
+    def create_and_start_poll(self, uniqueness):
+        poll_user = User.objects.create(username="TBS_USER_POLL" + uniqueness, email='foo@foo.com')
+        contact_user = User.objects.create(username="TBS_USER_CONTACT" + uniqueness, email='foo@foo.com')
+
+        poll = Poll.objects.create(name="TBS_POLL" + uniqueness, question='test_batch_sending', type=Poll.TYPE_TEXT, user=poll_user)
+
+        female_contact = Contact.objects.create(name="TBS_CONTACT" + uniqueness, gender='F', user=contact_user, birthdate=datetime.now() - relativedelta(years=25))
+        backend = Backend.objects.create(name="TBS" + uniqueness)
+        connection_for_female = Connection.objects.create(identity='08883338', backend=backend)
+        connection_for_female.contact = female_contact
+        connection_for_female.save()
+        poll.contacts.add(female_contact)
+        poll.add_yesno_categories()
+        poll.save()
+        poll.start()
+        return poll
+
+    def clear_settings(self):
+        try:
+            delattr(settings, "FEATURE_PREPARE_SEND_POLL")
+        except AttributeError:
+            pass
+        
 
 
 class TestPolls(TestCase):
