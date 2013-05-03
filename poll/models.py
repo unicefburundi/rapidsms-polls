@@ -313,6 +313,24 @@ class Poll(models.Model):
     def log_poll_message_debug(self, message):
         log.debug("[poll-" + str(self.pk) + "] " + message)
 
+    def is_ready_to_send(self):
+        batches = MessageBatch.objects.filter(name=self.get_outgoing_message_batch_name()).all()
+        ready = True;
+
+        for batch in batches:
+            if batch.status != "P":
+                ready = False
+                break
+
+        return ready
+
+    def queue_message_batches_to_send(self):
+        batches = MessageBatch.objects.filter(name=self.get_outgoing_message_batch_name()).all()
+        self.log_poll_message_info("Queueing [%d] MessageBatches for sending." % len(batches))
+        for batch in batches:
+            batch.status="Q"
+            batch.save()
+
     @transaction.commit_on_success
     def start(self):
         """

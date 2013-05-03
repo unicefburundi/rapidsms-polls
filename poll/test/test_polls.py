@@ -13,6 +13,12 @@ from dateutil.relativedelta import relativedelta
 
 class TestBatchSending(TestCase):
 
+    def setUp(self):
+        self.clear_settings()
+
+    def tearDown(self):
+        self.clear_settings()
+
     def test_should_choose_batch_status_based_on_feature_flag(self):
         p = Poll()
 
@@ -27,8 +33,6 @@ class TestBatchSending(TestCase):
         self.assertEqual(p.get_start_poll_batch_status(), "Q")
 
     def test_batch_status_should_be_Q_by_default(self):
-        self.clear_settings()
-
         poll = self.create_and_start_poll("Q")
 
         batch = MessageBatch.objects.filter(name=poll.get_outgoing_message_batch_name()).all()[0]
@@ -44,6 +48,12 @@ class TestBatchSending(TestCase):
 
         self.assertEqual(batch.status, "P")
 
+    def test_should_be_ready_to_send_if_batches_are_queued(self):
+        settings.FEATURE_PREPARE_SEND_POLL = True
+
+        poll = self.create_and_start_poll("RTS")
+
+        self.assertEqual(poll.is_ready_to_send(), True)
 
     def create_and_start_poll(self, uniqueness):
         poll_user = User.objects.create(username="TBS_USER_POLL" + uniqueness, email='foo@foo.com')
@@ -62,12 +72,14 @@ class TestBatchSending(TestCase):
         poll.start()
         return poll
 
+
+
     def clear_settings(self):
         try:
             delattr(settings, "FEATURE_PREPARE_SEND_POLL")
         except AttributeError:
             pass
-        
+
 
 
 class TestPolls(TestCase):
