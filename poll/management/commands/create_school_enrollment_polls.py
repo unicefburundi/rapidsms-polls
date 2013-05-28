@@ -21,7 +21,7 @@ from django.db.models import Q
 
 
 class Command(BaseCommand):
-    help = "Create new violence polls"
+    help = "Create school enrollment termly polls"
 
     option_list = BaseCommand.option_list + (
         make_option('-n', '--name', dest='n'),
