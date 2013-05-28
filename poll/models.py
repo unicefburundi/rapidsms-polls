@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import datetime
 import difflib
 from celery.task import task
 import django
-from django.db import models, transaction, connection
+from django.db import models, transaction
 from django.db.models import Sum, Avg, Count, Max, Min, StdDev
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
@@ -10,22 +12,15 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django import forms
-from django.db.models.query import QuerySet
 from django.utils.translation import ugettext as _
 from mptt.forms import TreeNodeChoiceField
 from rapidsms.models import Contact, Connection
-
 from eav import register
 from eav.models import Value, Attribute
-
 from generic.sorters import SimpleSorter
-
 from rapidsms.contrib.locations.models import Location
-from rapidsms.contrib.locations.nested import models as nested_models
 from rapidsms_httprouter.models import Message, MessageBatch
-
 from django.conf import settings
-from django.db import models
 import re
 from django.utils.translation import (ugettext, activate, deactivate)
 from dateutil.relativedelta import relativedelta
