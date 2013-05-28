@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import datetime
 import difflib
 from celery.task import task
@@ -15,11 +13,16 @@ from django import forms
 from django.utils.translation import ugettext as _
 from mptt.forms import TreeNodeChoiceField
 from rapidsms.models import Contact, Connection
+
 from eav import register
 from eav.models import Value, Attribute
+
 from generic.sorters import SimpleSorter
+
 from rapidsms.contrib.locations.models import Location
+from rapidsms.contrib.locations.nested import models as nested_models
 from rapidsms_httprouter.models import Message, MessageBatch
+
 from django.conf import settings
 import re
 from django.utils.translation import (ugettext, activate, deactivate)
