@@ -213,7 +213,6 @@ class Poll(models.Model):
 
     @classmethod
     @transaction.commit_on_success
-
     def create_with_bulk(cls, name, type, question, default_response, contacts, user):
         if getattr(settings,"BLACKLIST_MODEL",None):
             app_label,model_name=settings.BLACKLIST_MODEL.rsplit(".")
@@ -226,6 +225,7 @@ class Poll(models.Model):
         poll = Poll.objects.create(name=name, type=type, question=question, default_response=default_response, user=user)
         #batch for responses
         poll.contacts.add(*contacts.values_list('pk',flat=True))
+        from rapidsms_httprouter.models import MessageBatch
         MessageBatch.objects.get_or_create(name=str(poll.pk))
 
         if 'django.contrib.sites' in settings.INSTALLED_APPS:
