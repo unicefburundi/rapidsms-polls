@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from rapidsms.models import Contact, Connection, Backend
 from poll.models import Poll, Response, Category, Rule,Translation
 from rapidsms_httprouter.router import get_router
-from rapidsms_httprouter.models import Message
+from rapidsms_httprouter.models import Message, MessageBatch
 from django.utils import translation
 
 
@@ -34,11 +34,14 @@ class TestScript(TestCase):
         router = get_router()
         return router.handle_incoming(connection.backend.name, connection.identity, incoming_message)
 
+    SHOULD_HAVE_RESPONSE=True
+    SHOULD_NOT_HAVE_RESPONSE=False
 
-    def assertInteraction(self, connection, incoming_message, expected_response):
+    def assertInteraction(self, connection, incoming_message, expected_response, should_have_response=True):
         incoming_obj = self.fake_incoming(connection, incoming_message)
         print incoming_obj
-        self.assertEquals(Message.objects.filter(in_response_to=incoming_obj, text=expected_response).count(), 1)
+        if should_have_response:
+            self.assertEquals(Message.objects.filter(in_response_to=incoming_obj, text=expected_response).count(), 1, " There should be a message with expected response [%s]" % expected_response)
 
 
 class ProcessingTests(TestScript):
@@ -132,21 +135,27 @@ class ProcessingTests(TestScript):
         p.start()
         self.assertInteraction(self.connection1, 'apples', 'thanks!')
         r1 = Response.objects.all()[0]
+
         self.assertInteraction(self.connection2, 'oranges', 'thanks!')
         r2 = Response.objects.order_by('-pk')[0]
-        self.assertInteraction(self.connection1, 'pizza', 'thanks!')
+
+        self.assertInteraction(self.connection1, 'pizza', 'thanks!', TestScript.SHOULD_NOT_HAVE_RESPONSE)
         r3 = Response.objects.order_by('-pk')[0]
-        self.assertInteraction(self.connection2, 'pringles', 'thanks!')
+
+        self.assertInteraction(self.connection2, 'pringles', 'thanks!', TestScript.SHOULD_NOT_HAVE_RESPONSE)
         r4 = Response.objects.order_by('-pk')[0]
-        self.assertInteraction(self.connection1, 'steak', 'thanks!')
+
+        self.assertInteraction(self.connection1, 'steak', 'thanks!', TestScript.SHOULD_NOT_HAVE_RESPONSE)
         r5 = Response.objects.order_by('-pk')[0]
-        self.assertInteraction(self.connection2, 'pork chop', 'thanks!')
+
+        self.assertInteraction(self.connection2, 'pork chop', 'thanks!', TestScript.SHOULD_NOT_HAVE_RESPONSE)
         r6 = Response.objects.order_by('-pk')[0]
-        self.assertInteraction(self.connection2, 'moldy bread', 'thanks!')
+
+        self.assertInteraction(self.connection2, 'moldy bread', 'thanks!', TestScript.SHOULD_NOT_HAVE_RESPONSE)
         r7 = Response.objects.order_by('-pk')[0]
 
         for r in Response.objects.all():
-            self.assertEqual(r.categories.count(), 0)
+            self.assertEqual(r.categories.count(), 0, "number of response categories should be 0")
 
         for name, keywords in [('healthy', ['apples', 'oranges']),
                                    ('junk', ['pizza', 'pringles']),
@@ -163,7 +172,7 @@ class ProcessingTests(TestScript):
             self.assertEqual(r.categories.count(), 1)
             self.assertEqual(r.categories.all()[0].category.name, c)
 
-        self.assertEquals(r7.categories.count(), 0)
+        self.assertEquals(r7.categories.count(), 0, "number of r7 response categories should be 0")
 
     def test_response_type_handling(self):
         #test allow all
@@ -214,7 +223,6 @@ class ProcessingTests(TestScript):
         self.assertEqual(Response.objects.filter(contact=self.contact2,poll=poll3)[0].message.text, 'yes')
 
     def test_poll_translation(self):
-        
         t1=Translation.objects.create(field="How did you hear about Ureport?",
                                    language="ach",
                                    value="I winyo pi U-report ki kwene?")
@@ -242,7 +250,7 @@ class ProcessingTests(TestScript):
 
         self.assertInteraction(self.connection1, 'yes', 'Ureport gives you a chance to speak out on issues in your community & share opinions with youth around Uganda Best responses & results shared through the media')
         self.assertInteraction(self.connection2, 'no', 'Ureport mini kare me lok ikum jami matime i kama in ibedo iyee. Lagam mabejo kibiketo ne I karatac me ngec.')
-        self.assertEquals(Message.objects.count(), 5)
+        self.assertEquals(Message.objects.count(), 6)
         
     def test_null_responses(self):
      
@@ -257,9 +265,35 @@ class ProcessingTests(TestScript):
 
         self.fake_incoming(self.connection1, 'my precious :)')
         self.assertEqual(Message.objects.filter(connection=self.connection1,direction="O").count(),1)
-        
 
-            
+
+    def test_nothing_happens_if_you_start_a_started_poll(self):
+
+        p = Poll.create_with_bulk(
+            'test poll1',
+            Poll.TYPE_TEXT,
+            'are you there?',
+            'glad to know where you are!',
+            Contact.objects.all(),
+            self.user)
+        p.start()
+        p.start() #no exceptions should be thrown...
+
+    def test_batch_status_is_Q_when_start_poll(self):
+        p = Poll.create_with_bulk(
+            'test poll1',
+            Poll.TYPE_TEXT,
+            'are you there?',
+            'glad to know where you are!',
+            Contact.objects.all(),
+            self.user)
+        p.start()
+
+        batchName = p.get_outgoing_message_batch_name()
+        batches = MessageBatch.objects.filter(name=batchName).all()
+
+        for batch in batches:
+            self.assertEqual(batch.status, "Q")
 
 
 
