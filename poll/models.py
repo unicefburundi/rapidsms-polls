@@ -357,11 +357,10 @@ class Poll(models.Model):
 
         self.log_poll_message_info(" checking languages... " + str(dict(settings.LANGUAGES).keys()))
         for language in dict(settings.LANGUAGES).keys():
-            if language == "en":
+            if language == settings.DEFAULT_LANGUAGE:
                 """default to English for contacts with no language preference"""
-                localized_contacts = contacts.filter(language__in=["en", ''])
+                localized_contacts = contacts.filter(language__in=[settings.DEFAULT_LANGUAGE, ''])
             else:
-
                 localized_contacts = contacts.filter(language=language)
             if localized_contacts.exists():
                 self.log_poll_message_info(" creating messages using Message.mass_text for [%d] contacts in [%s]..." % (len(localized_contacts), language))
@@ -377,7 +376,6 @@ class Poll(models.Model):
         self.log_poll_message_info(" sending poll_started signal...")
         poll_started.send(sender=self)
         self.log_poll_message_info(" poll_started signal sent ok.")
-
         self.log_poll_message_info(" TRANSACTION COMMIT")
 
     def end(self):
