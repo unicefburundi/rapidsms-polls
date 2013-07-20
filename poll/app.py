@@ -50,6 +50,7 @@ class App(AppBase):
                         log.debug("[poll-app] Poll only allows one response per person, overwriting old response and replying...")
                         if not response_obj.has_errors or old_response.has_errors:
                             old_response.delete()
+                            # Bad design, poll has no business altering httprouter's objects!!
                             if hasattr(message, 'db_message'):
                                 db_message = message.db_message
                                 db_message.handled_by = 'poll'
@@ -59,11 +60,11 @@ class App(AppBase):
                         else:
                             response_obj.delete()
                         log.debug("[poll-app] Message handled.")
-                        return False
+                        return True # If Message is handled we should notify the router that we have handled the message
                     else:
                         log.debug("[poll-app] Recorded response but NOT sending the response message [%s]." % str(response_msg))
                         log.debug("[poll-app] Message handled.")
-                        return False
+                        return True # If Message is handled we should notify the router that we have handled the message
 
                 else:
                     log.debug("[poll-app] Processing message and replying to sender...")
@@ -82,8 +83,11 @@ class App(AppBase):
                         self.respond_to_message(message,poll.default_response,poll)
 
                     log.debug("[poll-app] Message handled.")
-                    # play nice, let other things handle responses
-                    return False
+                    # play nice, let other things handle responses, why? 
+                    # this is divegent from the RapidSMS router architecture, 
+                    # besides its safe to mark these messages as handled and put polls near the bottom 
+                    # of the RAPIDSMS_APPS list to give all other apps a chance to handle the message
+                    return True 
             except Poll.DoesNotExist:
                 if message.connection is not None:
                     log.debug("[poll-app] [%s] Poll not found for this message" % message.connection.identity)
