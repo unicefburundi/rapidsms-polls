@@ -615,7 +615,7 @@ def add_category(req, poll_id):
 @permission_required('poll.can_edit_poll')
 def delete_poll(req, poll_id):
     poll = get_object_or_404(Poll, pk=poll_id)
-    if req.method == 'POST':
+    if req.method == 'GET':
         poll.delete()
 
     return HttpResponse(status=200)
