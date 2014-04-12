@@ -568,10 +568,10 @@ class Poll(models.Model):
                 location_where = 'T9.id in %s' % (str(tuple(location.get_children().values_list('pk', flat=True))))
                 ulocation_where = 'T7.id in %s' % (str(tuple(location.get_children().values_list('pk', flat=True))))
 
-            where_list = [ \
-                'T9.lft <= locations_location.lft', \
-                'T9.rght >= locations_location.rght', \
-                location_where, \
+            where_list = [
+                'T9.lft <= locations_location.lft',
+                'T9.rght >= locations_location.rght',
+                location_where,
                 'T9.point_id = locations_point.id', ]
             select = {
                 'location_name': 'T9.name',
@@ -589,14 +589,14 @@ class Poll(models.Model):
                 tables = tables[:1]
             categorized = categorized \
                 .values('response__message__connection__contact__reporting_location__name') \
-                .extra(tables=tables, \
+                .extra(tables=tables,
                        where=where_list) \
                 .extra(select=select)
 
-            uwhere_list = [ \
-                'T7.lft <= locations_location.lft', \
-                'T7.rght >= locations_location.rght', \
-                ulocation_where, \
+            uwhere_list = [
+                'T7.lft <= locations_location.lft',
+                'T7.rght >= locations_location.rght',
+                ulocation_where,
                 'T7.point_id = locations_point.id', ]
             uselect = {
                 'location_name': 'T7.name',
@@ -617,7 +617,7 @@ class Poll(models.Model):
 
             uncategorized = uncategorized \
                 .values('message__connection__contact__reporting_location__name') \
-                .extra(tables=utables, \
+                .extra(tables=utables,
                        where=uwhere_list) \
                 .extra(select=uselect)
 
@@ -651,6 +651,49 @@ class Poll(models.Model):
             categorized = list(categorized) + uncategorized
 
         return categorized
+    
+    def simple_responses_by_category(self, location=None):
+    
+        categorized = ResponseCategory.objects.filter(response__poll=self)
+        uncategorized = self.responses.exclude(
+            pk__in=ResponseCategory.objects.filter(response__poll=self).values_list('response', flat=True))
+        
+        if location:
+            locations = Location.objects.get(pk = location.pk).get_children()
+        else:
+            locations = [location]
+        categorized_responses = {}
+        
+        #categorized results      
+        for loc in locations:
+            loc_cat = categorized.filter(response__message__connection__contact__reporting_location__in=loc.get_descendants(include_self=True))
+            categorized_responses[loc] = {}
+            categorized_responses[loc] = {'total': loc_cat.count()}
+            for cat in self.categories.all():
+                categorized_responses[loc][cat.name] = loc_cat.filter(category__name=cat.name).count()
+        
+        #append uncategorized results
+        for loc in locations:
+            loc_cat = uncategorized.filter(message__connection__contact__reporting_location__in=loc.get_descendants(include_self=True))
+            categorized_responses[loc]['uncategorized'] = loc_cat.count()
+            categorized_responses[loc]['total'] = categorized_responses[loc]['total'] + categorized_responses[loc]['uncategorized']
+                
+        return categorized_responses
+            
+        
+#         for loc in locations:
+#             for cat, pcat in pcats.items():
+#                 loc_pcat_count = pcat.filter(response__message__connection__contact__reporting_location__in=loc.get_children(include_self=True)).count()
+#                 categorized[cat.name] = (loc, loc_pcat_count)
+#                 
+#         return categorized
+#         if len(uncategorized):
+#             uncategorized = list(uncategorized)
+#             for d in uncategorized:
+#                 d.update({'category__name': 'uncategorized', 'category__color': ''})
+#             categorized = list(categorized) + uncategorized
+# 
+#         return categorized
 
     def process_uncategorized(self):
         responses = self.responses.filter(categories__category=None)
