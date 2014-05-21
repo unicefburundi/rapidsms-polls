@@ -616,6 +616,10 @@ def add_category(req, poll_id):
 def delete_poll(req, poll_id):
     poll = get_object_or_404(Poll, pk=poll_id)
     if req.method == 'GET':
+        #delete translations of the poll first       
+        Translation.objects.filter(field=poll.question).delete()
+        
+        #The finally delete the poll
         poll.delete()
 
     return HttpResponse(status=200)
